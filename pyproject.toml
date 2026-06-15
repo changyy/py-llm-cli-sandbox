@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llm-cli-sandbox"
+dynamic = ["version"]
+description = "Run Claude Code (and other LLM CLIs) inside a Docker sandbox, against a switchable local or remote LLM endpoint."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Yuan-Yi Chang", email = "changyy.csie@gmail.com" }]
+keywords = ["claude-code", "llm", "ollama", "litellm", "docker", "sandbox", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "typer>=0.12",
+    "pyyaml>=6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/changyy/py-llm-cli-sandbox"
+Repository = "https://github.com/changyy/py-llm-cli-sandbox"
+Issues = "https://github.com/changyy/py-llm-cli-sandbox/issues"
+
+[project.scripts]
+llm-cli-sandbox = "llm_cli_sandbox.cli:main"
+lcs = "llm_cli_sandbox.cli:main"
+
+[tool.hatch.version]
+path = "src/llm_cli_sandbox/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/llm_cli_sandbox"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
