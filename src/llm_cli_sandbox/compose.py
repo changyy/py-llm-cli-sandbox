@@ -95,6 +95,15 @@ def gen_litellm_config(ep: Endpoint) -> dict:
     }
 
 
+def render_litellm_config(ep: Endpoint) -> str:
+    """The litellm config YAML for this endpoint, exactly as written to disk.
+
+    Exposed so callers can tell whether the gateway's config changed (and thus
+    the running container must be recreated to reload it).
+    """
+    return yaml.safe_dump(gen_litellm_config(ep), sort_keys=False)
+
+
 def build_compose(cfg: Config, ep: Endpoint, workspace: Path) -> dict:
     """Build the compose document for this config + endpoint."""
     sandbox_service = {
@@ -141,7 +150,7 @@ def write_generated(cfg: Config, ep: Endpoint, workspace: Path) -> dict[str, Pat
 
     if ep.needs_gateway:
         litellm_path = paths.litellm_config_path()
-        litellm_path.write_text(yaml.safe_dump(gen_litellm_config(ep), sort_keys=False))
+        litellm_path.write_text(render_litellm_config(ep))
         written["litellm"] = litellm_path
 
     return written

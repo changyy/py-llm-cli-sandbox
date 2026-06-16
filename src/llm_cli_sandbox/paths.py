@@ -39,3 +39,13 @@ def compose_path() -> Path:
 
 def litellm_config_path() -> Path:
     return config_dir() / "litellm.config.yaml"
+
+
+def litellm_applied_path() -> Path:
+    """Records the litellm config the *running* gateway was (re)started with.
+
+    The live config file (above) is the volume mount; this marker is what the
+    container actually loaded. Comparing the two tells us whether a running
+    gateway needs recreating to pick up a regenerated config.
+    """
+    return config_dir() / "litellm.applied.yaml"

@@ -11,10 +11,12 @@ rest of the tool can stay platform-agnostic. The key differences we care about:
 
 from __future__ import annotations
 
+import os
 import platform as stdlib_platform
 import shutil
 import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 
 # Inject this on every generated compose file. Required on Linux, harmless on
 # Docker Desktop, so the "reach a service on this host" path collapses to one.
@@ -67,6 +69,38 @@ def _detect_runtime() -> tuple[str | None, str | None]:
     if shutil.which("podman"):
         return "podman", "podman"
     return None, None
+
+
+def total_ram_gb() -> float | None:
+    """Total physical RAM in GB (decimal), or None if it can't be determined."""
+    try:  # macOS and Linux
+        return round(os.sysconf("SC_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE") / 1e9, 1)
+    except (ValueError, OSError, AttributeError):
+        pass
+    try:  # Windows
+        import ctypes
+
+        class _MemStatus(ctypes.Structure):
+            _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                        ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
+                        ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
+                        ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
+                        ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+
+        stat = _MemStatus()
+        stat.dwLength = ctypes.sizeof(_MemStatus)
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))  # type: ignore[attr-defined]
+        return round(stat.ullTotalPhys / 1e9, 1)
+    except (OSError, AttributeError, ValueError):
+        return None
+
+
+def free_disk_gb(path: str | None = None) -> float | None:
+    """Free disk space in GB (decimal) at ``path`` (default: home), or None."""
+    try:
+        return round(shutil.disk_usage(path or str(Path.home())).free / 1e9, 1)
+    except OSError:
+        return None
 
 
 def detect() -> PlatformInfo:

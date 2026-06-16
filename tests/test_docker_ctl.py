@@ -45,6 +45,15 @@ def test_up_gateway_command(monkeypatch, docker_present):
     monkeypatch.setattr(docker_ctl.subprocess, "run", _capturing_run(captured))
     docker_ctl.up_gateway()
     assert captured["cmd"][-4:] == ["up", "-d", "--wait", "litellm"]
+    assert "--force-recreate" not in captured["cmd"]
+
+
+def test_up_gateway_force_recreate_reloads_config(monkeypatch, docker_present):
+    captured = {}
+    monkeypatch.setattr(docker_ctl.subprocess, "run", _capturing_run(captured))
+    docker_ctl.up_gateway(force_recreate=True)
+    assert "--force-recreate" in captured["cmd"]
+    assert captured["cmd"][-1] == "litellm"
 
 
 def test_build_raises_on_failure(monkeypatch, docker_present):

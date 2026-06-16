@@ -25,10 +25,10 @@ Two pillars:
    | `openai-compat` | no | yes |
    | `anthropic` | yes | no (point Claude Code straight at it) |
 
-> Status: **alpha (M2)**. Feature parity with the original shell workflow, plus
-> multi-endpoint switching: environment checks, gateway lifecycle, endpoint
-> management, and launching Claude Code on the host or inside the sandbox.
-> Cross-platform validation (Linux/Windows) is M3.
+> Status: **alpha** — initial release. Environment checks, gateway lifecycle,
+> endpoint management, and launching Claude Code on the host or inside the
+> sandbox are in place. Cross-platform validation (Linux/Windows) and hardened
+> distribution are still ahead — see the Roadmap.
 
 ## Install (development)
 
@@ -40,16 +40,20 @@ pip install -e .
 
 Requires Python 3.11+.
 
-## Usage (today, M2)
+## Usage
 
 ```bash
-llm-cli-sandbox version          # or: lcs version
+llm-cli-sandbox version          # short aliases: `lcs` and `llm-cli`
+llm-cli-sandbox quickstart       # copy-pasteable examples for the common flows
 llm-cli-sandbox platform         # detected OS/arch/runtime
 llm-cli-sandbox doctor           # check docker, endpoint reachability, auth, ...
+llm-cli-sandbox update           # is a newer release on PyPI? print how to upgrade
+llm-cli-sandbox update --from /tmp/checkout   # install from a local path / wheel / git URL
 
 llm-cli-sandbox init             # write config + extract Docker assets to ~/.llm-cli-sandbox/
 llm-cli-sandbox up               # generate compose + start the litellm gateway (if needed)
 llm-cli-sandbox status           # running services + endpoint reachability
+llm-cli-sandbox ping             # functional round-trip: does the model actually reply?
 llm-cli-sandbox down             # stop the gateway, remove containers/network
 
 # manage LLM endpoints (the "switch API location" part)
@@ -64,9 +68,16 @@ llm-cli-sandbox run --in-container -- -p "hello"   # inside the sandbox (non-roo
 llm-cli-sandbox shell -w ~/Project/my-app          # interactive sandbox shell
 
 # manage models on an ollama-type endpoint
-llm-cli-sandbox models list
+llm-cli-sandbox models catalog                     # recommended models + tool-calling, RAM & disk needs
+llm-cli-sandbox models list                        # what's installed (flags tool-calling support)
 llm-cli-sandbox models pull qwen2.5-coder:7b
+llm-cli-sandbox models use  qwen2.5-coder:7b       # set + verify it's installed (offers to pull)
+llm-cli-sandbox models use  qwen2.5-coder:7b --pull  # set and pull in one step
 ```
+
+`use` checks the model is actually on the endpoint and offers to pull it if
+not; `shell` / `run` / `up` do the same preflight and stop early with a clear
+hint rather than letting a missing model surface as a gateway error mid-session.
 
 Machine-readable output for scripting/CI:
 
@@ -96,6 +107,36 @@ Docker availability, `host.docker.internal` resolution per platform, endpoint
 reachability (local or remote), gateway port conflicts, and Claude Code auth
 sanity.
 
+Where `doctor`/`status` check that things are reachable, `ping` checks they
+actually *work*: it sends a tiny prompt straight to the model (`direct`) and,
+for gateway endpoints, through the litellm gateway over the Anthropic Messages
+API (`gateway`) — the exact path Claude Code uses — and prints each reply with
+timing. `--json` exits non-zero if the path Claude would use fails, so you can
+confirm a backend end-to-end without launching an interactive session:
+
+```
+endpoint : local-ollama [ollama] http://localhost:11434
+model    : gpt-oss:20b
+direct   : OK (load 0.12s + gen 0.05s) [loaded] "pong"
+gateway  : OK (0.23s) "pong"
+tools    : OK (0.30s) tool_use returned
+READY
+```
+
+For an Ollama endpoint, the `direct` line splits out Ollama's own
+`load_duration` (model load) from generation and marks whether the model was
+`[cold]` or already `[loaded]`, so a slow first call is attributed correctly —
+a cold start, not a slow backend — with a hint to keep the model warm
+(`OLLAMA_KEEP_ALIVE`) when load dominates.
+
+The `tools` check is the one that decides whether Claude Code is actually
+usable: it sends a request that should trigger a tool call and verifies the
+reply is a structured `tool_use` block. Many capable chat models (e.g.
+`qwen2.5-coder`) answer in plain text instead — they pass `direct`/`gateway`
+but Claude Code, which is entirely tool-driven, can't drive them. A failure
+here makes `ping` report `NOT OK` with a hint to switch to a tool-calling model
+(`--no-tools` skips the check for plain-chat use).
+
 `up` generates `~/.llm-cli-sandbox/docker-compose.yml` and `litellm.config.yaml`
 from the selected endpoint — emitting a litellm gateway service only when the
 endpoint needs Anthropic translation, and injecting
@@ -104,7 +145,7 @@ reachable identically on Linux and Docker Desktop.
 
 ## Configuration
 
-`~/.llm-cli-sandbox/config.toml` (created by `init` in M1; defaults used until then):
+`~/.llm-cli-sandbox/config.toml` (created by `init`; defaults used until then):
 
 ```toml
 [general]

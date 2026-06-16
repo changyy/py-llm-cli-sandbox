@@ -63,3 +63,14 @@ def test_litellm_config_openai_routing():
     assert params["model"] == "openai/qwen"
     assert params["api_base"] == "http://10.0.0.5:8000/v1"
     assert params["api_key"] == "sk-noop"
+
+
+def test_render_litellm_config_changes_with_model():
+    # Switching the model (e.g. `models use`) must change the rendered config so
+    # the running gateway gets recreated to reload it.
+    a = compose.render_litellm_config(Endpoint(name="o", type="ollama", model="gpt-oss:20b"))
+    b = compose.render_litellm_config(Endpoint(name="o", type="ollama", model="qwen2.5-coder:7b"))
+    same = compose.render_litellm_config(Endpoint(name="o", type="ollama", model="gpt-oss:20b"))
+    assert a != b
+    assert a == same
+    assert "qwen2.5-coder:7b" in b

@@ -87,8 +87,12 @@ def build(service: str | None = None) -> None:
         )
 
 
-def up_gateway(wait: bool = True) -> None:
+def up_gateway(wait: bool = True, *, force_recreate: bool = False) -> None:
     args = ["up", "-d"]
+    if force_recreate:
+        # litellm reads its config only at startup; recreate so a regenerated
+        # config (e.g. after `models use`) is actually loaded.
+        args.append("--force-recreate")
     if wait:
         args.append("--wait")
     args.append("litellm")

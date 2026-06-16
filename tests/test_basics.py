@@ -12,6 +12,13 @@ def test_platform_detect():
     assert info.claude_launch in ("exec", "subprocess")
 
 
+def test_hardware_probes_are_sane():
+    ram = sysinfo.total_ram_gb()
+    assert ram is None or ram > 0
+    disk = sysinfo.free_disk_gb()
+    assert disk is None or disk > 0
+
+
 def test_default_config_has_local_ollama():
     cfg = default_config()
     ep = cfg.get_endpoint()

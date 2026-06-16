@@ -17,7 +17,9 @@ import urllib.request
 from dataclasses import dataclass
 from enum import Enum
 
+from llm_cli_sandbox import __version__
 from llm_cli_sandbox import sysinfo as plat
+from llm_cli_sandbox import update as update_mod
 from llm_cli_sandbox.config import Config, Endpoint
 
 
@@ -190,6 +192,25 @@ def check_auth_env() -> CheckResult:
     return CheckResult("auth-env", Status.OK, "no conflicting Anthropic auth env vars")
 
 
+def check_update() -> CheckResult:
+    """Compare the running version against the latest published release.
+
+    Network failure is not an error here — an offline machine reports OK so the
+    check never blocks an otherwise-healthy environment.
+    """
+    latest = update_mod.latest_version()
+    if latest is None:
+        return CheckResult("update", Status.OK, f"{__version__} (version check skipped — offline?)")
+    if update_mod.is_newer(latest):
+        return CheckResult(
+            "update",
+            Status.WARN,
+            f"{__version__} -> {latest} available",
+            fix=update_mod.upgrade_hint(),
+        )
+    return CheckResult("update", Status.OK, f"up to date ({__version__})")
+
+
 def run_all(config: Config, endpoint_name: str | None = None) -> list[CheckResult]:
     info = plat.detect()
     ep = config.get_endpoint(endpoint_name)
@@ -202,4 +223,5 @@ def run_all(config: Config, endpoint_name: str | None = None) -> list[CheckResul
         check_claude_cli(),
         check_endpoint(ep),
         check_auth_env(),
+        check_update(),
     ]

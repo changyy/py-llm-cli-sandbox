@@ -42,6 +42,7 @@ Issues = "https://github.com/changyy/py-llm-cli-sandbox/issues"
 
 [project.scripts]
 llm-cli-sandbox = "llm_cli_sandbox.cli:main"
+llm-cli = "llm_cli_sandbox.cli:main"
 lcs = "llm_cli_sandbox.cli:main"
 
 [tool.hatch.version]
