@@ -42,37 +42,40 @@ Requires Python 3.11+.
 
 ## Usage
 
-```bash
-llm-cli-sandbox version          # short aliases: `lcs` and `llm-cli`
-llm-cli-sandbox quickstart       # copy-pasteable examples for the common flows
-llm-cli-sandbox platform         # detected OS/arch/runtime
-llm-cli-sandbox doctor           # check docker, endpoint reachability, auth, ...
-llm-cli-sandbox update           # is a newer release on PyPI? print how to upgrade
-llm-cli-sandbox update --from /tmp/checkout   # install from a local path / wheel / git URL
+The CLI installs three equivalent entrypoints — **`lcs`** (short), `llm-cli`,
+and `llm-cli-sandbox`. The examples below use `lcs`.
 
-llm-cli-sandbox init             # write config + extract Docker assets to ~/.llm-cli-sandbox/
-llm-cli-sandbox up               # generate compose + start the litellm gateway (if needed)
-llm-cli-sandbox status           # running services + endpoint reachability
-llm-cli-sandbox ping             # functional round-trip: does the model actually reply?
-llm-cli-sandbox down             # stop the gateway, remove containers/network
+```bash
+lcs version                  # 'lcs' == 'llm-cli' == 'llm-cli-sandbox' (same entrypoint)
+lcs quickstart               # copy-pasteable examples for the common flows
+lcs platform                 # detected OS/arch/runtime
+lcs doctor                   # check docker, endpoint reachability, auth, ...
+lcs update                   # is a newer release on PyPI? print how to upgrade
+lcs update --from /tmp/checkout   # install from a local path / wheel / git URL
+
+lcs init                     # write config + extract Docker assets to ~/.llm-cli-sandbox/
+lcs up                       # generate compose + start the litellm gateway (if needed)
+lcs status                   # running services + endpoint reachability
+lcs ping                     # functional round-trip: does the model actually reply?
+lcs down                     # stop the gateway, remove containers/network
 
 # manage LLM endpoints (the "switch API location" part)
-llm-cli-sandbox endpoints list
-llm-cli-sandbox endpoints add lan --type openai-compat --url http://10.0.0.5:8000/v1 -m qwen --use
-llm-cli-sandbox endpoints add proxy --type anthropic --url https://proxy.internal   # no gateway
-llm-cli-sandbox endpoints use local-ollama
+lcs endpoints list
+lcs endpoints add lan --type openai-compat --url http://10.0.0.5:8000/v1 -m qwen --use
+lcs endpoints add proxy --type anthropic --url https://proxy.internal   # no gateway
+lcs endpoints use local-ollama
 
 # launch Claude Code (pass its args after `--`)
-llm-cli-sandbox run -- -p "hello"                 # on the host, via the gateway
-llm-cli-sandbox run --in-container -- -p "hello"   # inside the sandbox (non-root)
-llm-cli-sandbox shell -w ~/Project/my-app          # interactive sandbox shell
+lcs run -- -p "hello"                 # on the host, via the gateway
+lcs run --in-container -- -p "hello"  # inside the sandbox (non-root)
+lcs shell -w ~/Project/my-app         # interactive sandbox shell
 
 # manage models on an ollama-type endpoint
-llm-cli-sandbox models catalog                     # recommended models + tool-calling, RAM & disk needs
-llm-cli-sandbox models list                        # what's installed (flags tool-calling support)
-llm-cli-sandbox models pull qwen2.5-coder:7b
-llm-cli-sandbox models use  qwen2.5-coder:7b       # set + verify it's installed (offers to pull)
-llm-cli-sandbox models use  qwen2.5-coder:7b --pull  # set and pull in one step
+lcs models catalog                    # recommended models + tool-calling, RAM & disk needs
+lcs models list                       # what's installed (flags tool-calling support)
+lcs models pull qwen2.5-coder:7b
+lcs models use  qwen2.5-coder:7b      # set + verify it's installed (offers to pull)
+lcs models use  qwen2.5-coder:7b --pull   # set and pull in one step
 ```
 
 `use` checks the model is actually on the endpoint and offers to pull it if
@@ -82,9 +85,9 @@ hint rather than letting a missing model surface as a gateway error mid-session.
 Machine-readable output for scripting/CI:
 
 ```bash
-llm-cli-sandbox platform --json
-llm-cli-sandbox doctor --json     # exits non-zero if any check fails
-llm-cli-sandbox status --json     # readiness probe; exits non-zero if not ready
+lcs platform --json
+lcs doctor --json     # exits non-zero if any check fails
+lcs status --json     # readiness probe; exits non-zero if not ready
 ```
 
 `status` reports whether everything needed to launch against the selected
@@ -99,7 +102,7 @@ State location defaults to `~/.llm-cli-sandbox/` and can be relocated (handy
 for tests or parallel setups):
 
 ```bash
-LLM_CLI_SANDBOX_HOME=/tmp/lab llm-cli-sandbox init
+LLM_CLI_SANDBOX_HOME=/tmp/lab lcs init
 ```
 
 `doctor` turns every environment trap into a check with a concrete fix hint:
